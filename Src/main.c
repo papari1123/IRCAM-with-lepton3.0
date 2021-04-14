@@ -82,12 +82,16 @@ UART_HandleTypeDef huart2;
 #define DEBUG_PRINTF(...)
 #endif
   
+#define TEST_LSG
+
 static struct pt lepton_task_pt;
 static struct pt usb_task_pt;
 static struct pt uart_task_pt;
 static struct pt button_task_pt;
 static struct pt lepton_attribute_xfer_task_pt;
 
+//ver.1.0
+static struct pt test_task_pt;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -193,6 +197,8 @@ int main(void)
   PT_INIT(&uart_task_pt);
   PT_INIT(&lepton_attribute_xfer_task_pt);
 
+  PT_INIT(&test_task_pt);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -202,7 +208,10 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
+#ifdef TEST_LSG
+    PT_SCHEDULE(test_task(&test_task_pt));
 
+#else
 	  PT_SCHEDULE(lepton_task(&lepton_task_pt));
 #ifndef THERMAL_DATA_UART
 	  PT_SCHEDULE(usb_task(&usb_task_pt));
@@ -214,6 +223,7 @@ int main(void)
 	  }
 
 	  PT_SCHEDULE(lepton_attribute_xfer_task(&lepton_attribute_xfer_task_pt));
+#endif
   }
   /* USER CODE END 3 */
 
