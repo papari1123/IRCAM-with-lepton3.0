@@ -5,6 +5,7 @@
 #include "usbd_uvc.h"
 #include "LEPTON_Types.h"
 #include "LEPTON_ErrorCodes.h"
+#include "lepton.h"
 
 // Long running tasks
 PT_THREAD( lepton_task(struct pt *pt));
