@@ -123,17 +123,11 @@ void board_detect();
 extern void initialise_monitor_handles(void);
 #endif
 
-
-
-#ifdef __GNUC__
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif
-
-PUTCHAR_PROTOTYPE
+/*printf retarget to UART*/
+int _write (int file, char *ptr, int len)
 {
-HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF);
+    HAL_UART_Transmit(&huart2, ptr, len, 1000); //print the input ptr.
+    return len; //return length.
 }
 
 int main(void)
@@ -181,8 +175,12 @@ int main(void)
   // reinitialize uart with speed from config
   huart2.Init.BaudRate = USART_DEBUG_SPEED;
   HAL_UART_Init(&huart2);
-  
-  DEBUG_PRINTF("Hello, Lepton!\n\r");
+  while(1)
+  {
+     HAL_Delay(1000);
+    DEBUG_PRINTF("Hello, Lepton!\n\r");
+  }
+
 
 
   fflush(stdout);
