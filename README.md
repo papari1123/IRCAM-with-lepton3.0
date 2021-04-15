@@ -1,3 +1,5 @@
+v0.1. add _write function to active a redirection (prinf -> UART)
+
 original : https://github.com/groupgets/purethermal1-firmware
 # PureThermal 1/2/Mini Reference Firmware
 
