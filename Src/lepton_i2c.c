@@ -29,6 +29,8 @@ LEP_CAMERA_PORT_DESC_T hport_desc;
 
 extern volatile uint8_t g_lepton_type_3;
 
+
+
 static void set_lepton_type()
 {
   LEP_RESULT result;

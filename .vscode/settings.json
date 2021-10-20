@@ -1,6 +1,9 @@
 {
     "files.associations": {
         "stm32f4xx_hal.h": "c",
-        "stm32f4xx_hal_conf.h": "c"
+        "stm32f4xx_hal_conf.h": "c",
+        "tasks.h": "c",
+        "project_config.h": "c",
+        "print_redir_uart.h": "c"
     }
 }

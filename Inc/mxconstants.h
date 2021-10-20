@@ -66,6 +66,7 @@ extern unsigned int pt_hse_value;
 #define BUCK_ON_GPIO_Port GPIOB
 #define LDO_ON_Pin GPIO_PIN_7
 #define LDO_ON_GPIO_Port GPIOB
+#define BUZZ_Pin GPIO_PIN_0
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

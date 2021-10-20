@@ -48,6 +48,9 @@ DMA_HandleTypeDef hdma_memtomem_dma2_stream0;
 #include "tasks.h"
 #include "project_config.h"
 
+#include "ssd1306.h"
+#include "fonts.h"
+
 typedef enum {
 	PT_BOARD_PT1,
 	PT_BOARD_PT2
@@ -90,7 +93,7 @@ static struct pt uart_task_pt;
 static struct pt button_task_pt;
 static struct pt lepton_attribute_xfer_task_pt;
 
-//ver.1.0
+//ver.0.1
 static struct pt test_task_pt;
 /* USER CODE END PV */
 
@@ -123,18 +126,13 @@ void board_detect();
 extern void initialise_monitor_handles(void);
 #endif
 
-/*printf retarget to UART*/
-int _write (int file, char *ptr, int len)
-{
-    HAL_UART_Transmit(&huart2, ptr, len, 1000); //print the input ptr.
-    return len; //return length.
-}
+
 
 int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  
   board_detect();
 
   /* USER CODE END 1 */
@@ -146,7 +144,7 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
-
+  
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
@@ -156,6 +154,8 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
+ 
+
   MX_USART2_UART_Init();
   MX_USB_DEVICE_Init();
 
@@ -175,21 +175,34 @@ int main(void)
   // reinitialize uart with speed from config
   huart2.Init.BaudRate = USART_DEBUG_SPEED;
   HAL_UART_Init(&huart2);
-  while(1)
-  {
-     HAL_Delay(1000);
-    DEBUG_PRINTF("Hello, Lepton!\n\r");
-  }
-
-
+  #if defined(USART_DEBUG)
+  APP_UART_DEBUG_Init(&huart2);
+  #endif
+  DEBUG_PRINTF("Hello, Lepton!!\n\r");
 
   fflush(stdout);
 
-  lepton_init();
+ /*210909 LSG added OLED code.*/
+  // Init lcd using one of the stm32HAL i2c typedefs
+  
+  unsigned int err =  ssd1306_Init(&hi2c1);
+  if(err!=0)
+  {
+    DEBUG_PRINTF("SSD1306 error : %d\n\r",err);
+  }
+  
+  // Write data to local screenbuffer
+  ssd1306_SetCursor(0, 0);
+  ssd1306_WriteString("TEST Mode", Font_11x18, White);
+
+  // Copy all data from local screenbuffer to the screen  
+  ssd1306_UpdateScreen(&hi2c1);
+
+  lepton_init(); // Lepton start up sequence.
 
   HAL_Delay(1000);
-
-  init_lepton_command_interface();
+  
+  init_lepton_command_interface(); //CCI start up sequence using LEP_OpenPort()
 
 #if defined(TMP007)
   DEBUG_PRINTF("reading_tmp007_regs...\n\r");
@@ -202,14 +215,13 @@ int main(void)
   HAL_Delay(250);
 
   MX_USB_DEVICE_Init();
-
+  DEBUG_PRINTF("Success USB Initialization.\n\r");
   PT_INIT(&lepton_task_pt);
   PT_INIT(&usb_task_pt);
   PT_INIT(&uart_task_pt);
-  PT_INIT(&lepton_attribute_xfer_task_pt);
-
+  PT_INIT(&lepton_attribute_xfer_task_pt); //lepton_i2c_task
   PT_INIT(&test_task_pt);
-
+  PT_INIT(&button_task_pt);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -219,22 +231,18 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-#ifdef TEST_LSG
-    PT_SCHEDULE(test_task(&test_task_pt));
-
-#else
+   // PT_SCHEDULE(test_task(&test_task_pt));  
+    
 	  PT_SCHEDULE(lepton_task(&lepton_task_pt));
 #ifndef THERMAL_DATA_UART
 	  PT_SCHEDULE(usb_task(&usb_task_pt));
 #else
 	  PT_SCHEDULE(uart_task(&uart_task_pt));
 #endif
-	  if (pt_board == PT_BOARD_PT1) {
 	  PT_SCHEDULE(button_task(&button_task_pt));
-	  }
-
+	  
 	  PT_SCHEDULE(lepton_attribute_xfer_task(&lepton_attribute_xfer_task_pt));
-#endif
+    
   }
   /* USER CODE END 3 */
 
@@ -565,20 +573,31 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB_STAT_Pin */
+
   GPIO_InitStruct.Pin = PB_STAT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(PB_STAT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BUCK_ON_Pin LDO_ON_Pin */
-  GPIO_InitStruct.Pin = BUCK_ON_Pin|LDO_ON_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+
+  /*Configure GPIO pins : BUCK_ON_Pin LDO_ON_Pin BUZZ_Pin*/
+  GPIO_InitStruct.Pin = BUCK_ON_Pin|LDO_ON_Pin|BUZZ_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+
+  /*Configure GPIO pins : LSG, SW0 MODE PIN INIT*/
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   HAL_GPIO_WritePin(GPIOB, BUCK_ON_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOB, LDO_ON_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOB, BUZZ_Pin, GPIO_PIN_RESET);
 
+  
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, ESP_GPIO2_Pin|ESP_GPIO0_Pin|ESP_CH_PD_Pin|SYSTEM_LED_Pin 
@@ -588,6 +607,18 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
+  /* 210903 LSG set P_HOLD Pin */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);
+  //TODO : use PWM control.
+  /*
+  for(int i = 0; i<20;i++)
+  {
+    HAL_Delay(4);
+    HAL_GPIO_WritePin(GPIOB,BUZZ_Pin,GPIO_PIN_SET);
+    HAL_Delay(1);
+    HAL_GPIO_WritePin(GPIOB,BUZZ_Pin,GPIO_PIN_RESET);
+  }
+ */
 }
 
 /* USER CODE BEGIN 4 */

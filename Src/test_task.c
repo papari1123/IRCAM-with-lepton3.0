@@ -14,18 +14,14 @@ PT_THREAD (test_task(struct pt *pt))
 {
     static uint32_t msCount;
     PT_BEGIN(pt);
+    DEBUG_PRINTF("TEST task2\n\r");
+    msCount = HAL_GetTick();
+    static int test=0;
     while(1)
     {
+        PT_WAIT_UNTIL(pt, (HAL_GetTick() - msCount) > 1000);
+        DEBUG_PRINTF("TEST CNT:%d\n\r",test++);
         msCount = HAL_GetTick();
-        while(1)
-        {
-            if( (HAL_GetTick() - msCount) > 3000 )
-			{
-                HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_6);
-                DEBUG_PRINTF("TEST CNT");
-                break;
-            }
-        }
-    }   
+    } 
     PT_END(pt);
 }

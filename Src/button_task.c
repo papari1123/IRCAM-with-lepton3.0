@@ -16,6 +16,7 @@
 #include "project_config.h"
 
 
+
 #if defined(USART_DEBUG) || defined(GDB_SEMIHOSTING)
 #define DEBUG_PRINTF(...) printf( __VA_ARGS__);
 #else
@@ -23,7 +24,7 @@
 #endif
 
 
-PT_THREAD( button_task(struct pt *pt))
+PT_THREAD(button_task(struct pt *pt))
 {
 	static uint32_t msCount;
 
@@ -32,18 +33,20 @@ PT_THREAD( button_task(struct pt *pt))
 
 	while (1)
 	{
+		// 0909 LSG CHECK  SW0 (MODE) PIN
 
-		PT_WAIT_UNTIL(pt, HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == 0);
+		PT_WAIT_UNTIL(pt, HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == 0);
+		DEBUG_PRINTF("RESET START...\n\r");
 		msCount = HAL_GetTick();
 		PT_YIELD(pt);
-		while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == 0)
+		while(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == 0)
 		{
-			if( (HAL_GetTick() - msCount) > 4000 )
+			if( (HAL_GetTick() - msCount) > 2000 )
 			{
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+				// PS_HOLD RESET
+				DEBUG_PRINTF("shutdown...\n\r");
+			   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+				
 			}
 
 			PT_YIELD(pt);
