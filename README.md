@@ -1,5 +1,12 @@
+## history
+**v0.1** 
+add _write function to active a redirection (prinf -> UART)
+
+
+
+
 original : https://github.com/groupgets/purethermal1-firmware
-# PureThermal 1/2/Mini Reference Firmware
+# Introduce : PureThermal 1/2/Mini Reference Firmware
 
 [![Build Status](https://travis-ci.org/groupgets/purethermal1-firmware.svg?branch=master)](https://travis-ci.org/groupgets/purethermal1-firmware)
 
